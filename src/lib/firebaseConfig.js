@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
+import { getAuth } from "firebase/auth"; 
 
 const firebaseConfig = {
   apiKey: "AIzaSyCKQW1SywakqYdrp9AidPVRnZO_hOckdIc",
@@ -18,11 +19,14 @@ const app = initializeApp(firebaseConfig);
 // Initialize Firestore
 const db = getFirestore(app);
 
+// Initialize Authentication
+const auth = getAuth(app); // Add authentication initialization
+
 // Initialize Analytics only in the browser
 let analytics;
 if (typeof window !== "undefined") {
   analytics = getAnalytics(app);
 }
 
-// Export the Firestore database and Firebase config
-export { db, firebaseConfig };
+// Export the Firestore database, Auth, and Firebase config
+export { db, auth, firebaseConfig };

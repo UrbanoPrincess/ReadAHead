@@ -1,75 +1,66 @@
 <script lang="ts">
-  import { initializeApp, getApps, getApp } from "firebase/app";
+  import { getFirestore, collection, addDoc, updateDoc } from 'firebase/firestore';
   import { firebaseConfig } from "$lib/firebaseConfig";
-  import { getFirestore, collection, addDoc, query, getDocs, orderBy } from "firebase/firestore";
+  import { initializeApp, getApps, getApp } from "firebase/app";
+  import { getAuth } from 'firebase/auth';  // Import Firebase Auth
+  import { Modal, Input, Label, Button } from 'flowbite-svelte';  // Import Flowbite components
 
-  // Initialize Firebase app
   const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
   const db = getFirestore(app);
+  const auth = getAuth(app);  // Initialize Firebase Auth
 
-  interface Recommendation {
-    id: string;
-    title: string;
-    author: string;
-    genre: string;
-    description: string;
-    ISBN: string;
-    publishDate: Date;
-    rating: number;
-    coverImage?: string;
-    purchaseUrl?: string;
-    createdAt: Date;
-    recommendedBy: string;
-  }
-
-  let recommendations: Recommendation[] = [];
   let title = "";
   let author = "";
   let genre = "";
   let description = "";
-  let ISBN = "";
-  let publishDate = "";
-  let rating = "";
   let coverImage = "";
   let purchaseUrl = "";
   let recommendedBy = "";
 
+  let formModalOpen = true;  // Open the modal automatically on page load
+
   // Add a book recommendation to Firestore
   async function addRecommendation() {
     try {
+      // Get the user's email from Firebase Authentication
+      const user = auth.currentUser;
+      if (user) {
+        recommendedBy = user.email || "Unknown";  // If no email, set to "Unknown"
+      } else {
+        recommendedBy = "Anonymous";  // Fallback if no user is signed in
+      }
+
       const newRecommendation = {
         title,
         author,
         genre,
         description,
-        ISBN,
-        publishDate: new Date(publishDate),
-        rating: parseFloat(rating),
         coverImage: coverImage || undefined,
         purchaseUrl: purchaseUrl || undefined,
         createdAt: new Date(),
-        recommendedBy,
+        recommendedBy, // Use the email automatically here
+        likesCount: 0,  // Initial likes count
+        addedToReadlist: false,  // Initial readlist status
       };
 
-      await addDoc(collection(db, "recommendedBooks"), newRecommendation);
+      // Add the new book recommendation to Firestore
+      const docRef = await addDoc(collection(db, "recommendedBooks"), newRecommendation);
+
+      // Get the newly added document's ID
+      const bookId = docRef.id;
+
+      // Optionally, you can update the Firestore document with the bookId if needed
+      await updateDoc(docRef, {
+        bookId: bookId,  // Store the book ID in the document itself
+      });
+
+      // Clear form after successful submission
       clearForm();
-      await fetchRecommendations();
+      formModalOpen = false;  // Close the modal after successful submission
       alert("Recommendation added successfully!");
     } catch (error) {
       console.error("Error adding recommendation:", error);
       alert("Failed to add recommendation. Please try again.");
-    }
-  }
-
-  // Fetch all book recommendations from Firestore
-  async function fetchRecommendations() {
-    try {
-      const q = query(collection(db, "recommendedBooks"), orderBy("createdAt", "desc"));
-      const querySnapshot = await getDocs(q);
-      recommendations = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Recommendation[];
-    } catch (error) {
-      console.error("Error fetching recommendations:", error);
-      alert("Failed to fetch recommendations. Please try again later.");
     }
   }
 
@@ -79,60 +70,73 @@
     author = "";
     genre = "";
     description = "";
-    ISBN = "";
-    publishDate = "";
-    rating = "";
     coverImage = "";
     purchaseUrl = "";
     recommendedBy = "";
   }
-
-  // Fetch recommendations on component mount
-  fetchRecommendations();
 </script>
 
-<div class="container mx-auto p-8">
-  <h2 class="text-2xl font-bold mb-6 text-center">Add a Book Recommendation</h2>
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-    <!-- Form Card -->
-    <div class="card bg-white shadow-md p-6 rounded-lg">
+<main>
+  <!-- Modal for adding book recommendation -->
+  <div class="modal-container w-full flex justify-center items-center bg-gray-100 p-6">
+    <div class="modal-content max-w-md w-full bg-white rounded-lg shadow-lg p-6 space-y-6">
+      <h3 class="text-xl font-medium text-gray-900 dark:text-white">Add a Book Recommendation</h3>
+  
       <form on:submit|preventDefault={addRecommendation} class="space-y-4">
-        <div class="container space-y-4">
-          <input type="text" class="form-input w-full" placeholder="Title" bind:value={title} required>
-          <input type="text" class="form-input w-full" placeholder="Author" bind:value={author} required>
-          <input type="text" class="form-input w-full" placeholder="Genre" bind:value={genre} required>
-          <textarea class="form-input w-full" placeholder="Description" bind:value={description} required></textarea>
-          <input type="text" class="form-input w-full" placeholder="ISBN" bind:value={ISBN} required>
-          <input type="date" class="form-input w-full" placeholder="Publish Date" bind:value={publishDate} required>
-          <input type="number" class="form-input w-full" placeholder="Rating" bind:value={rating} step="0.1" required>
-          <input type="text" class="form-input w-full" placeholder="Cover Image URL" bind:value={coverImage}>
-          <input type="text" class="form-input w-full" placeholder="Purchase URL" bind:value={purchaseUrl}>
-          <input type="text" class="form-input w-full" placeholder="Recommended By" bind:value={recommendedBy} required>
+        <div class="space-y-4">
+          <div>
+            <Label for="title" class="block">Title</Label>
+            <Input id="title" type="text" class="form-input w-full" placeholder="Enter book title" bind:value={title} required />
+          </div>
+
+          <div>
+            <Label for="author" class="block">Author</Label>
+            <Input id="author" type="text" class="form-input w-full" placeholder="Enter author's name" bind:value={author} required />
+          </div>
+
+          <div>
+            <Label for="genre" class="block">Genre</Label>
+            <Input id="genre" type="text" class="form-input w-full" placeholder="Enter genre" bind:value={genre} required />
+          </div>
+
+          <!-- Custom description textarea with Flowbite styling -->
+          <div>
+            <Label for="description" class="block">Description</Label>
+            <textarea id="description" class="form-textarea w-full p-3 border border-gray-300 rounded-md" placeholder="Enter a short description" bind:value={description} required></textarea>
+          </div>
+
+          <div>
+            <Label for="coverImage" class="block">Cover Image URL</Label>
+            <Input id="coverImage" type="text" class="form-input w-full" placeholder="Enter cover image URL" bind:value={coverImage} />
+          </div>
+
+          <div>
+            <Label for="purchaseUrl" class="block">Purchase URL</Label>
+            <Input id="purchaseUrl" type="text" class="form-input w-full" placeholder="Enter purchase URL" bind:value={purchaseUrl} />
+          </div>
+
+        <div class="space-x-4">
+          <Button type="submit" class="bg-blue-500 text-white">Submit</Button>
         </div>
-        <button type="submit" class="btn btn-primary w-full">Add Recommendation</button>
       </form>
     </div>
-    <!-- Recommendations Card -->
-    <div class="card bg-white shadow-md p-6 rounded-lg">
-      <h2 class="text-2xl font-bold mb-4">Book Recommendations</h2>
-      {#each recommendations as recommendation}
-        <div class="card border border-gray-200 p-4 rounded-md mb-4">
-          <h3 class="font-semibold text-lg">{recommendation.title}</h3>
-          <p><strong>Author:</strong> {recommendation.author}</p>
-          <p><strong>Genre:</strong> {recommendation.genre}</p>
-          <p><strong>Description:</strong> {recommendation.description}</p>
-          <p><strong>ISBN:</strong> {recommendation.ISBN}</p>
-          <p><strong>Publish Date:</strong> {new Date(recommendation.publishDate).toLocaleDateString()}</p>
-          <p><strong>Rating:</strong> {recommendation.rating}</p>
-          <p><strong>Recommended By:</strong> {recommendation.recommendedBy}</p>
-          {#if recommendation.coverImage}
-            <img src="{recommendation.coverImage}" alt="{recommendation.title} cover" class="w-20 h-auto mt-2">
-          {/if}
-          {#if recommendation.purchaseUrl}
-            <p><a href="{recommendation.purchaseUrl}" target="_blank" class="text-blue-600 hover:underline">Purchase Link</a></p>
-          {/if}
-        </div>
-      {/each}
-    </div>
   </div>
-</div>
+</main>
+
+<style>
+    .modal-container {
+      background-color: transparent; /* Set modal container background to transparent */
+    }
+
+    .modal-content {
+      background-color: white; /* Keep modal content white */
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Customize textarea styling */
+    .form-textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+</style>
