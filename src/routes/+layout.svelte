@@ -90,7 +90,7 @@
 			<li><button style="color: black;" on:click={() => handleDrawerClick('/myrecommendedBook')} disabled={!isAuthenticated}>My Book Recommendations</button></li>
 			<li><button style="color: black;" on:click={() => handleDrawerClick('/recommendBook')} disabled={!isAuthenticated}>Add Book Recommendations</button></li>
 			<li><button style="color: black;" on:click={() => handleDrawerClick('/readlist')} disabled={!isAuthenticated}>My Reading List</button></li>
-			<li><button style="color: black;" on:click={() => handleDrawerClick('/myRatings')} disabled={!isAuthenticated}>My Ratings</button></li>
+	
 		  </ul>
 		</li>
 		<li>

@@ -93,23 +93,31 @@
 
   // Remove book from readlist
   async function removeFromReadlist(bookId: string) {
+    // Check if currentUserEmail is defined and is a string
+    if (typeof currentUserEmail !== 'string' || !currentUserEmail) {
+        console.error("User email is not available or not a string.");
+        alert("User is not logged in!");
+        return;
+    }
+
+    // Ensure currentUserEmail is of type 'string'
     const userReadlistRef = doc(db, "userReadlists", currentUserEmail);
 
     try {
-      await updateDoc(userReadlistRef, {
-        bookIds: arrayRemove(bookId),
-      });
+        await updateDoc(userReadlistRef, {
+            bookIds: arrayRemove(bookId),
+        });
 
-      // Update local state to reflect removal
-      readlistBooks = readlistBooks.filter(book => book.id !== bookId);
+        // Update local state to reflect removal
+        readlistBooks = readlistBooks.filter(book => book.id !== bookId);
 
-      console.log("Book removed from readlist!");
-      alert("Book removed from your readlist!");
+        console.log("Book removed from readlist!");
+        alert("Book removed from your readlist!");
     } catch (error) {
-      console.error("Error removing book from readlist:", error);
-      alert("Failed to remove book from the readlist.");
+        console.error("Error removing book from readlist:", error);
+        alert("Failed to remove book from the readlist.");
     }
-  }
+}
 
   // Fetch the user's readlist when the component mounts
   onMount(() => {
