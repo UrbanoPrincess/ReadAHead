@@ -12,24 +12,20 @@
 	const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 	const auth = getAuth(app);
   
-	let formModal = false;
 	let email = "";
 	let password = "";
 	let errorMessage = "";
-	let userName = "";
 	let drawerVisible = false;
 	let isAuthenticated = false;
-	let showLoginMessage = false;  // New variable for showing login message
+	let showLoginMessage = false;  // Variable for showing login message
   
 	// Check authentication state
 	onMount(() => {
 	  onAuthStateChanged(auth, (user) => {
 		if (user) {
 		  isAuthenticated = true;
-		  userName = user.displayName || (user.email ? user.email.split('@')[0] : 'DefaultUser');
 		} else {
 		  isAuthenticated = false;
-		  userName = '';
 		}
 	  });
 	});
@@ -52,17 +48,9 @@
 	}
   
 	// Function to logout
-	function logoutUser() {
-	  signOut(auth).then(() => {
-		isAuthenticated = false;
-		userName = '';
-		goto('/');
-	  }).catch((error) => {
-		console.error("Error during logout:", error);
-	  });
-	}
+	function logoutUser() { if (confirm("Are you sure you want to logout?")) 
+	{ signOut(auth).then(() => { isAuthenticated = false; goto('/'); }).catch((error) => { console.error("Error during logout:", error); }); } }
   </script>
-  
   <main>
 	<!-- Header with Logo and Navigation -->
 	<header>
@@ -90,7 +78,6 @@
 			<li><button style="color: black;" on:click={() => handleDrawerClick('/myrecommendedBook')} disabled={!isAuthenticated}>My Book Recommendations</button></li>
 			<li><button style="color: black;" on:click={() => handleDrawerClick('/recommendBook')} disabled={!isAuthenticated}>Add Book Recommendations</button></li>
 			<li><button style="color: black;" on:click={() => handleDrawerClick('/readlist')} disabled={!isAuthenticated}>My Reading List</button></li>
-	
 		  </ul>
 		</li>
 		<li>
@@ -118,6 +105,7 @@
   
 	<slot />
   </main>
+  
   
   <style>
 	header {
