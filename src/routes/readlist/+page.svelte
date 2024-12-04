@@ -1,11 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { getFirestore, doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+  import { getFirestore, doc, getDoc, updateDoc, arrayRemove } from 'firebase/firestore';
   import { firebaseConfig } from "$lib/firebaseConfig";
   import { initializeApp, getApps, getApp } from "firebase/app";
   import { getAuth } from 'firebase/auth';
+  import { onAuthStateChanged } from 'firebase/auth';
+  import { CloseCircleSolid } from 'flowbite-svelte-icons';
 
-  // Initialize Firebase
   const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
   const db = getFirestore(app);
   const auth = getAuth();
@@ -22,17 +23,23 @@
   }
 
   let readlistBooks: Book[] = [];
+  let currentUserEmail: string | null = null;
+  let isLoading = true;
 
-  // Get current user email from Firebase Authentication
-  const currentUserEmail = auth.currentUser?.email;
+  onMount(() => {
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        currentUserEmail = user.email;
+        fetchReadlist();
+      } else {
+        console.error("User is not logged in.");
+        isLoading = false;
+      }
+    });
+  });
 
-  // Ensure the email is a valid string before proceeding
-  if (!currentUserEmail) {
-    throw new Error('User is not logged in or email is unavailable');
-  }
-
-  // Fetch user's readlist
   async function fetchReadlist() {
+    isLoading = true;
     if (!currentUserEmail) {
       console.error("User is not logged in or email is undefined.");
       return;
@@ -51,7 +58,6 @@
       const readlist = docSnap.data()?.bookIds || [];
       console.log("Fetched book IDs:", readlist);
 
-      // Fetch book details for each book in the readlist
       readlistBooks = await Promise.all(
         readlist.map(async (bookId: string) => {
           const bookRef = doc(db, "recommendedBooks", bookId);
@@ -67,12 +73,14 @@
     } catch (error) {
       console.error("Error fetching readlist:", error);
       alert("Failed to fetch readlist.");
+    } finally {
+      isLoading = false;
     }
   }
 
-  // Add book to readlist
-  async function addToReadlist(bookId: string) {
+  async function removeFromReadlist(bookId: string) {
     if (!currentUserEmail) {
+      console.error("User is not logged in!");
       alert("User is not logged in!");
       return;
     }
@@ -81,83 +89,208 @@
 
     try {
       await updateDoc(userReadlistRef, {
-        bookIds: arrayUnion(bookId), // Adds the book ID to the array without duplicates
+        bookIds: arrayRemove(bookId),
       });
-      console.log("Book added to readlist!");
-      fetchReadlist(); // Refetch to update the UI
+
+      readlistBooks = readlistBooks.filter(book => book.id !== bookId);
+
+      console.log("Book removed from readlist!");
+      alert("Book removed from your readlist!");
     } catch (error) {
-      console.error("Error adding book to readlist:", error);
-      alert("Failed to add book to readlist.");
+      console.error("Error removing book from readlist:", error);
+      alert("Failed to remove book from the readlist.");
     }
   }
-
-  // Remove book from readlist
-  async function removeFromReadlist(bookId: string) {
-    // Check if currentUserEmail is defined and is a string
-    if (typeof currentUserEmail !== 'string' || !currentUserEmail) {
-        console.error("User email is not available or not a string.");
-        alert("User is not logged in!");
-        return;
-    }
-
-    // Ensure currentUserEmail is of type 'string'
-    const userReadlistRef = doc(db, "userReadlists", currentUserEmail);
-
-    try {
-        await updateDoc(userReadlistRef, {
-            bookIds: arrayRemove(bookId),
-        });
-
-        // Update local state to reflect removal
-        readlistBooks = readlistBooks.filter(book => book.id !== bookId);
-
-        console.log("Book removed from readlist!");
-        alert("Book removed from your readlist!");
-    } catch (error) {
-        console.error("Error removing book from readlist:", error);
-        alert("Failed to remove book from the readlist.");
-    }
-}
-
-  // Fetch the user's readlist when the component mounts
-  onMount(() => {
-    fetchReadlist();
-  });
 </script>
 
+<!-- svelte-ignore css_unused_selector -->
 <style>
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .image-container {
+    flex-shrink: 0;
+    width: 100px;
+  }
+
+  .cover-image {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 2/3;
+    object-fit: cover;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.9);
+    border-radius: 4px;
+  }
+
+  .card {
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 12px;
+    border-radius: 12px;
+  }
+
   .btn {
     background-color: transparent;
     border: none;
-    font-size: 24px;
     cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+  }
+
+  .btn:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+  }
+
+  .remove {
+    color: #ef4444;
+    font-weight: 500;
+  }
+
+  @media (min-width: 640px) {
+    .image-container {
+      width: 120px;
+    }
+
+    .card {
+      padding: 16px;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .image-container {
+      width: 80px;
+    }
+  }
+
+  .loader {
+    width: 48px;
+    height: 48px;
+    border: 5px solid #FFF;
+    border-bottom-color: #FF3D00;
+    border-radius: 50%;
+    display: inline-block;
+    box-sizing: border-box;
+    animation: rotation 1s linear infinite;
+  }
+
+  @keyframes rotation {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  .loading-dots {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .dots {
+    display: flex;
+    gap: 8px;
+  }
+
+  .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #FF3D00;
+    animation: bounce 0.5s ease-in-out infinite;
+  }
+
+  .dot:nth-child(2) {
+    animation-delay: 0.1s;
+    background-color: #FF6B00;
+  }
+
+  .dot:nth-child(3) {
+    animation-delay: 0.2s;
+    background-color: #FF9100;
+  }
+
+  @keyframes bounce {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  .please-wait {
+    color: #666;
+    font-size: 0.9rem;
+    font-weight: 500;
   }
 </style>
 
-<div class="container mx-auto p-8">
-  <h2 class="text-3xl font-bold mb-6 text-center">Your Readlist</h2>
-  <div class="flex flex-col space-y-8">
-    {#each readlistBooks as book}
-      <div class="card bg-white shadow-lg p-6 rounded-lg w-full">
-        <div class="flex items-start space-x-6">
-          {#if book.coverImage}
-            <img src={book.coverImage} alt="{book.title} cover" class="w-32 h-auto" />
-          {/if}
-          <div class="flex flex-col space-y-1">
-            <h3 class="font-semibold text-2xl">{book.title}</h3>
-            <p class="m-0"><strong>Author:</strong> {book.author}</p>
-            <p class="m-0"><strong>Genre:</strong> {book.genre}</p>
-            <p class="m-0"><strong>Description:</strong> {book.description}</p>
-
-            <div class="mt-6 flex justify-end space-x-4">
-              <!-- Remove from Readlist Button -->
-              <button class="btn" on:click={() => removeFromReadlist(book.id)}>
-                ➖ Remove from Readlist
+<div class="container mx-auto px-2 sm:px-4 lg:px-8">
+  <h2 class="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-center">Your Readlist</h2>
+  
+  {#if isLoading}
+    <div class="flex justify-center items-center min-h-[200px]">
+      <div class="loading-dots">
+        <div class="dots">
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+        </div>
+        <span class="please-wait">Please wait...</span>
+      </div>
+    </div>
+  {:else}
+    <div class="flex flex-col space-y-4 sm:space-y-6">
+      {#if readlistBooks.length > 0}
+        {#each readlistBooks as book}
+          <div class="card">
+            <div class="flex flex-row gap-3 sm:gap-6">
+              {#if book.coverImage}
+                <div class="image-container">
+                  <img 
+                    src={book.coverImage} 
+                    alt="{book.title} cover" 
+                    class="cover-image" 
+                  />
+                </div>
+              {/if}
+              <div class="flex flex-col space-y-1 sm:space-y-2 flex-1 min-w-0">
+                <h3 class="font-semibold text-lg sm:text-xl truncate">{book.title}</h3>
+                <p class="text-sm sm:text-base m-0"><strong>By:</strong> {book.author}</p>
+                <p class="text-sm sm:text-base m-0"><strong>Genre:</strong> {book.genre}</p>
+                <p class="text-sm sm:text-base m-0 line-clamp-3">{book.description}</p>
+          
+                {#if book.purchaseUrl}
+                  <p class="m-0">
+                    <a href={book.purchaseUrl} 
+                       target="_blank" 
+                       class="text-sm sm:text-base text-blue-600 hover:underline block truncate">
+                      {book.purchaseUrl}
+                    </a>
+                  </p>
+                {/if}
+              </div>
+            </div>
+      
+            <div class="mt-3 sm:mt-4 flex justify-end items-center space-x-2">
+              <button 
+                class="btn remove flex items-center text-sm sm:text-base" 
+                on:click={() => removeFromReadlist(book.id)}
+              >
+                <CloseCircleSolid class="h-5 w-5 sm:h-6 sm:w-6 text-red-500" />
+                <span class="ml-1">Remove</span>
               </button>
             </div>
           </div>
-        </div>
-      </div>
-    {/each}
-  </div>
-</div>
+        {/each}
+      {:else}
+        <p class="text-center text-gray-500 text-sm sm:text-base">No books in your readlist.</p>
+      {/if}
+    </div>
+  {/if}
+</div>  

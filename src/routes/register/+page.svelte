@@ -5,6 +5,7 @@
   import { createUserWithEmailAndPassword } from 'firebase/auth';
   import { getAuth } from 'firebase/auth';
   import { Button, Label, Input } from 'flowbite-svelte';
+  import { EnvelopeSolid, LockSolid, UserSolid } from 'flowbite-svelte-icons';
 
   // Firebase initialization
   const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
@@ -73,52 +74,138 @@
   }
 </script>
 
-<!-- Register Form Modal -->
-<div class="modal-container w-full flex justify-center items-center bg-gray-100 p-6">
-  <div class="modal-content max-w-md w-full bg-white rounded-lg shadow-lg p-6 space-y-6">
-    <h3 class="text-xl font-medium text-gray-900 dark:text-white">Register on our platform</h3>
-    <form on:submit|preventDefault={registerUser} class="flex flex-col space-y-6">
-      <Label class="space-y-2">
-        <span>Email</span>
-        <Input type="email" bind:value={email} placeholder="name@company.com" required />
-      </Label>
-      <Label class="space-y-2">
-        <span>Username</span> <!-- New username field -->
-        <Input type="text" bind:value={username} placeholder="Enter your username" required />
-      </Label>
-      <Label class="space-y-2">
-        <span>Create password</span>
-        <Input type="password" bind:value={password} placeholder="•••••" required />
-      </Label>
-      <Label class="space-y-2">
-        <span>Confirm password</span>
-        <Input type="password" bind:value={confirmPassword} placeholder="•••••" required />
-      </Label>
-      
+<main class="min-h-screen flex items-center justify-center py-6 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full space-y-4 bg-white rounded-xl shadow-lg p-6 sm:p-8">
+    <!-- Logo/Brand section -->
+    <div class="text-center space-y-1">
+      <img 
+        class="h-14 w-auto mx-auto" 
+        src="images/logo.png" 
+        alt="Logo" 
+      />
+      <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Create Account</h2>
+      <p class="text-sm text-gray-600">Please fill in the details below</p>
+    </div>
+
+    <form on:submit|preventDefault={registerUser} class="space-y-4">
+      <!-- Email Input -->
+      <div class="space-y-1">
+        <Label class="block text-sm font-medium text-gray-700" for="email">
+          Email Address
+        </Label>
+        <div class="relative">
+          <EnvelopeSolid class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Input
+            id="email"
+            type="email"
+            bind:value={email}
+            class="pl-10"
+            placeholder="name@example.com"
+            required
+          />
+        </div>
+      </div>
+
+      <!-- Username Input -->
+      <div class="space-y-1">
+        <Label class="block text-sm font-medium text-gray-700" for="username">
+          Username
+        </Label>
+        <div class="relative">
+          <UserSolid class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Input
+            id="username"
+            type="text"
+            bind:value={username}
+            class="pl-10"
+            placeholder="Enter your username"
+            required
+          />
+        </div>
+      </div>
+
+      <!-- Password Input -->
+      <div class="space-y-1">
+        <Label class="block text-sm font-medium text-gray-700" for="password">
+          Password
+        </Label>
+        <div class="relative">
+          <LockSolid class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Input
+            id="password"
+            type="password"
+            bind:value={password}
+            class="pl-10"
+            placeholder="••••••••"
+            required
+          />
+        </div>
+      </div>
+
+      <!-- Confirm Password Input -->
+      <div class="space-y-1">
+        <Label class="block text-sm font-medium text-gray-700" for="confirmPassword">
+          Confirm Password
+        </Label>
+        <div class="relative">
+          <LockSolid class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Input
+            id="confirmPassword"
+            type="password"
+            bind:value={confirmPassword}
+            class="pl-10"
+            placeholder="••••••••"
+            required
+          />
+        </div>
+      </div>
+
+      <!-- Error/Success Messages -->
       {#if errorMessage}
-        <p class="text-red-500 text-sm">{errorMessage}</p>
+        <div class="bg-red-50 border-l-4 border-red-500 p-4">
+          <p class="text-red-700 text-sm">{errorMessage}</p>
+        </div>
       {/if}
 
       {#if successMessage}
-        <p class="text-green-500 text-sm">{successMessage}</p>
+        <div class="bg-green-50 border-l-4 border-green-500 p-4">
+          <p class="text-green-700 text-sm">{successMessage}</p>
+        </div>
       {/if}
-      
-      <Button type="submit" class="w-full" style="background-color: blue; color: white;">Register</Button>
 
-      <div class="text-sm font-medium text-gray-500 dark:text-gray-300">
-        Already have an account? <a href="/login" class="text-primary-700 hover:underline dark:text-primary-500">Sign in</a>
+      <!-- Register Button -->
+      <Button
+        type="submit"
+        class="w-full"
+        color="red"
+      >
+        Create Account
+      </Button>
+
+      <!-- Login Link -->
+      <div class="text-center pt-2">
+        <span class="text-sm text-gray-600">Already have an account?</span>
+        <a href="/login" class="ml-1 text-sm font-medium text-blue-600 hover:text-blue-500">
+          Sign in
+        </a>
       </div>
     </form>
   </div>
-</div>
-<style>
-  .modal-container {
-  background-color: transparent; /* Set modal container background to transparent */
-     }
+</main>
 
-  .modal-content {
-  background-color: white; /* Keep modal content white */
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+<style>
+  :global(body) {
+    background-color: #faf1e8;
   }
-  </style>
+
+  /* Optional: Style the input focus states */
+  :global(.input:focus) {
+    border-color: #800000;
+    box-shadow: 0 0 0 1px #800000;
+  }
+
+  /* Optional: Style the button hover state */
+  :global(button:hover) {
+    opacity: 0.9;
+  }
+</style>
