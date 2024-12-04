@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { getFirestore, collection, query, getDocs, orderBy, updateDoc, doc, arrayUnion, arrayRemove, increment, getDoc, setDoc } from 'firebase/firestore';
+  import { getFirestore, collection, query, getDocs, orderBy, updateDoc, doc, arrayUnion, arrayRemove, increment, getDoc } from 'firebase/firestore';
   import { firebaseConfig } from "$lib/firebaseConfig";
   import { initializeApp, getApps, getApp } from "firebase/app";
   import { getAuth } from "firebase/auth";

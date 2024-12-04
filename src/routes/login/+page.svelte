@@ -114,11 +114,6 @@
             <span class="text-sm text-gray-700">Remember me</span>
           </Checkbox>
         </div>
-        <div class="text-sm">
-          <a href="/forgot-password" class="font-medium text-blue-600 hover:text-blue-500">
-            Forgot your password?
-          </a>
-        </div>
       </div>
 
       <!-- Login Button -->
