@@ -3,16 +3,29 @@ import { vitePreprocess } from "@sveltejs/vite-plugin-svelte";
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-	// Consult https://kit.svelte.dev/docs/integrations#preprocessors
-	// for more information about preprocessors
-	preprocess: vitePreprocess(),
+    preprocess: vitePreprocess(),
 
-	kit: {
-		// adapter-auto only supports some environments, see https://kit.svelte.dev/docs/adapter-auto for a list.
-		// If your environment is not supported, or you settled on a specific environment, switch out the adapter.
-		// See https://kit.svelte.dev/docs/adapters for more information about adapters.
-		adapter: adapter({ pages: "build", assets: "build", fallback: undefined, precompress: false, strict: true }),
-	},
+    kit: {
+        adapter: adapter({ pages: "build", assets: "build", fallback: undefined, precompress: false, strict: true }),
+        prerender: {
+            entries: [
+                '/', // Add your static routes here
+                '/myrecommendedBook',
+                '/recommendBook',
+                '/editrecommendedBook1/1', // Example dynamic route with specific ID
+                '/readlist',
+                '/login',
+                '/register'
+            ],
+            handleHttpError: ({ status, path, referrer, referenceType }) => {
+                if (status === 404) {
+                    console.warn(`404 error on ${path} (linked from ${referrer})`);
+                    return;
+                }
+                throw new Error(`Failed to prerender ${path}: ${status}`);
+            }
+        }
+    },
 };
 
 export default config;

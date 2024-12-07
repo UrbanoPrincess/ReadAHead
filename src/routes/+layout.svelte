@@ -75,11 +75,12 @@
 		  <!-- Logo -->
 		  <a href="/" class="logo-container">
 			<img 
-			  src="images/logo1.png" 
-			  alt="Logo" 
-			  class="logo"
+				src="/images/logo1.png" 
+				alt="Logo" 
+				class="logo"
 			/>
-		  </a>
+		</a>
+		
   
 		  <!-- Navigation -->
 		  <nav class="nav-container">
