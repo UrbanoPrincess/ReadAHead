@@ -1,9 +1,11 @@
 <script lang="ts">
-  import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
+  import { getFirestore, collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
   import { firebaseConfig } from "$lib/firebaseConfig";
   import { initializeApp, getApps, getApp } from "firebase/app";
   import { getAuth, onAuthStateChanged } from 'firebase/auth';
   import { onMount } from 'svelte';
+  import { TrashBinSolid, EditSolid } from 'flowbite-svelte-icons';
+  import { goto } from '$app/navigation';
 
   const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
   const db = getFirestore(app);
@@ -53,9 +55,27 @@
     }
     loading = false;
   }
+
+  async function deleteRecommendation(id: string | undefined): Promise<void> {
+    if (!id) return;
+    try {
+      await deleteDoc(doc(db, "recommendedBooks", id));
+      userRecommendations = userRecommendations.filter(recommendation => recommendation.id !== id);
+      console.log("Recommendation deleted successfully");
+    } catch (error) {
+      console.error("Error deleting recommendation:", error);
+    }
+  }
+
+  function editRecommendation(id: string | undefined) {
+    if (id) {
+        goto(`/editrecommendedBook1/${id}`);
+    }
+}
+
 </script>
 
-<div class="container mx-auto px-2 sm:px-4 lg:px-8">
+<div class="container mx-auto px-1 sm:px-4 lg:px-8 py-4 sm:py-6">
   <h2 class="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-center">My Recommended Books</h2>
   {#if loading}
     <div class="loading-dots">
@@ -69,8 +89,8 @@
   {:else if userRecommendations.length > 0}
     <div class="grid grid-cols-1 gap-4 sm:gap-6">
       {#each userRecommendations as recommendation}
-        <div class="card p-3 sm:p-6">
-          <div class="flex flex-row gap-3 sm:gap-6">
+        <div class="card p-3 sm:p-6 flex flex-col h-full">
+          <div class="flex flex-row gap-3 sm:gap-6 flex-grow">
             {#if recommendation.coverImage}
               <div class="image-container">
                 <img src={recommendation.coverImage} alt="{recommendation.title} cover" class="cover-image" />
@@ -92,6 +112,23 @@
               </p>
               {/if}
             </div>
+          </div>
+          <div class="flex justify-end mt-auto space-x-2 border-t pt-2">
+            <button 
+              class="p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              on:click={() => editRecommendation(recommendation.id)}
+              aria-label="Edit recommendation"
+            >
+              <EditSolid class="w-5 h-5" />
+            </button>
+
+            <button 
+              class="p-2 bg-red-500 text-white rounded hover:bg-red-600"
+              on:click={() => deleteRecommendation(recommendation.id)}
+              aria-label="Delete recommendation"
+            >
+              <TrashBinSolid class="w-5 h-5" />
+            </button>
           </div>
         </div>
       {/each}

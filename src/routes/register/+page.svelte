@@ -4,8 +4,9 @@
   import { initializeApp, getApps, getApp } from "firebase/app";
   import { createUserWithEmailAndPassword } from 'firebase/auth';
   import { getAuth } from 'firebase/auth';
-  import { Button, Label, Input } from 'flowbite-svelte';
-  import { EnvelopeSolid, LockSolid, UserSolid } from 'flowbite-svelte-icons';
+  import { Button, Label, Input, Toast } from 'flowbite-svelte';
+  import { CheckCircleSolid, EnvelopeSolid, LockSolid, UserSolid } from 'flowbite-svelte-icons';
+  import { goto } from '$app/navigation';
 
   // Firebase initialization
   const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
@@ -17,7 +18,7 @@
   let confirmPassword = "";
   let username = "";  // New variable for the username
   let errorMessage = "";
-  let successMessage = "";
+  let showToast = false; // State variable for Toast visibility
 
   // Validation function
   function isEmailValid(email: string) {
@@ -55,7 +56,14 @@
       confirmPassword = "";
       username = ""; 
       errorMessage = "";
-      successMessage = "User registered successfully!";
+      showToast = true; // Show the Toast
+
+      // Navigate to home page after 3 seconds
+      setTimeout(() => {
+        showToast = false; // Hide the Toast
+        goto('/'); // Navigate to home page
+      }, 3000);
+
     } catch (error: unknown) {
       console.error("Error during registration:", error);
 
@@ -160,16 +168,10 @@
         </div>
       </div>
 
-      <!-- Error/Success Messages -->
+      <!-- Error Messages -->
       {#if errorMessage}
         <div class="bg-red-50 border-l-4 border-red-500 p-4">
           <p class="text-red-700 text-sm">{errorMessage}</p>
-        </div>
-      {/if}
-
-      {#if successMessage}
-        <div class="bg-green-50 border-l-4 border-green-500 p-4">
-          <p class="text-green-700 text-sm">{successMessage}</p>
         </div>
       {/if}
 
@@ -193,19 +195,20 @@
   </div>
 </main>
 
+{#if showToast}
+  <div class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50">
+    <Toast color="green">
+      <svelte:fragment slot="icon">
+        <CheckCircleSolid class="w-5 h-5" />
+        <span class="sr-only">Check icon</span>
+      </svelte:fragment>
+      registered successfully!
+    </Toast>
+  </div>
+{/if}
+
 <style>
   :global(body) {
     background-color: #faf1e8;
-  }
-
-  /* Optional: Style the input focus states */
-  :global(.input:focus) {
-    border-color: #800000;
-    box-shadow: 0 0 0 1px #800000;
-  }
-
-  /* Optional: Style the button hover state */
-  :global(button:hover) {
-    opacity: 0.9;
   }
 </style>

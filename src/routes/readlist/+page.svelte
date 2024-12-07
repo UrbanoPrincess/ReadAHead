@@ -95,7 +95,7 @@
       readlistBooks = readlistBooks.filter(book => book.id !== bookId);
 
       console.log("Book removed from readlist!");
-      alert("Book removed from your readlist!");
+     
     } catch (error) {
       console.error("Error removing book from readlist:", error);
       alert("Failed to remove book from the readlist.");
@@ -112,7 +112,7 @@
 
   .image-container {
     flex-shrink: 0;
-    width: 100px;
+    width: 80px;
   }
 
   .cover-image {
@@ -160,7 +160,7 @@
 
   @media (max-width: 360px) {
     .image-container {
-      width: 80px;
+      width: 60px;
     }
   }
 
@@ -230,7 +230,7 @@
   }
 </style>
 
-<div class="container mx-auto px-2 sm:px-4 lg:px-8">
+<div class="container mx-auto px-1 sm:px-4 lg:px-8 py-4 sm:py-6">
   <h2 class="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-center">Your Readlist</h2>
   
   {#if isLoading}
@@ -277,7 +277,7 @@
               </div>
             </div>
       
-            <div class="mt-3 sm:mt-4 flex justify-end items-center space-x-2">
+            <div class="flex justify-end mt-auto space-x-2 border-t pt-2">
               <button 
                 class="btn remove flex items-center text-sm sm:text-base" 
                 on:click={() => removeFromReadlist(book.id)}
